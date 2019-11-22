@@ -42,3 +42,50 @@ class Model {
     });
   }
 }
+/*
+  @class View
+*/
+
+class View {
+  constructor() {
+    // This is the root element
+    this.app = this.getElement('#root');
+
+    // This is the title
+    this.title = this.createElement('h1');
+    this.title.textContent = 'Todos';
+
+    // Form with input and submit button
+    this.form = this.createElement('form');
+
+    // Input
+    this.input = this.createElement('input');
+    this.input.type = 'text';
+    this.input.placeholder = 'Add todo';
+    this.input.name = 'todo';
+
+    // Button
+    this.submitBtn = this.createElement('button');
+    this.submitBtn.type = 'submit';
+    this.submitBtn.textContent = 'Submit';
+
+    // Wrapper of the todos
+    this.todoList = this.createElement('ul', 'todo-list');
+
+    // Append the input and button to the form
+    this.form.append(this.input, this.submitBtn);
+
+    // Append the title, form and todo list to app
+    this.app.append(this.title, this.form, this.todoList);
+  }
+
+  createElement(tag, className) {
+    const element = document.createElement(tag);
+    if (className) element.classList.add(className);
+    return element;
+  }
+
+  getElement(selector) {
+    return document.querySelector(selector);
+  }
+}
