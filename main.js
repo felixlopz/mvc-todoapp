@@ -88,6 +88,14 @@ class View {
   getElement(selector) {
     return document.querySelector(selector);
   }
+
+  getInputText() {
+    return this.input.value;
+  }
+
+  resetInputText() {
+    this.input.value = '';
+  }
 }
 
 /*
