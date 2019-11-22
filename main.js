@@ -5,7 +5,7 @@
 class Model {
   constructor() {
     this.todos = [
-      // { id: 0, text: 'My fancy Todo', completed: false },
+      { id: 0, text: 'My fancy Todo', completed: false }
       // { id: 0, text: 'My fancy Todo', completed: false },
       // { id: 0, text: 'My fancy Todo', completed: false },
       // { id: 0, text: 'My fancy Todo', completed: false }
@@ -38,7 +38,7 @@ class Model {
   }
 
   // toggle todo completed method
-  updateTodo(id) {
+  toggleTodo(id) {
     this.todos = this.todos.map(todo => {
       todo.id === id
         ? { id: todo.id, text: todo.text, completed: !todo.completed }
@@ -124,7 +124,7 @@ class View {
 
         // Checkbox
         const checkbox = this.createElement('input');
-        checkbox.type = 'check';
+        checkbox.type = 'checkbox';
         checkbox.checked = todo.completed;
 
         // Text
@@ -141,7 +141,7 @@ class View {
         }
 
         // Button
-        const deleteBtn = this.createElement('button');
+        const deleteBtn = this.createElement('button', 'delete');
         deleteBtn.textContent = 'Delete';
 
         // Appending to the li element
@@ -151,6 +151,36 @@ class View {
         this.todoList.append(li);
       });
     }
+  }
+
+  // Event Listeners
+  bindCreateTodo(handler) {
+    this.form.addEventListener('submit', e => {
+      e.preventDefault();
+
+      if (this._getInputText) {
+        handler(this._getInputText);
+        this._resetInputText;
+      }
+    });
+  }
+
+  bindToggleTodo(handler) {
+    this.todoList.addEventListener('change', e => {
+      if (e.target.type === 'checkbox') {
+        const id = e.target.parentElement.id;
+        handler(id);
+      }
+    });
+  }
+
+  bindDeleteTodo(handler) {
+    this.todoList.addEventListener('click', e => {
+      if (e.target.className === 'delete') {
+        const id = e.target.parentElement.id;
+        handler(id);
+      }
+    });
   }
 }
 
@@ -164,11 +194,29 @@ class Controller {
     this.view = view;
 
     this.onTodoListChanged();
+    this.view.bindCreateTodo(this.handleCreateTodo);
+    this.view.bindCreateTodo(this.handleCreateTodo);
+    this.view.bindCreateTodo(this.handleCreateTodo);
   }
 
   onTodoListChanged() {
     this.view.displayTodos(this.model.todos);
   }
+
+  handleCreateTodo = todoText => {
+    this.model.createTodo(todoText);
+  };
+
+  handleUpdateTodo = (id, todoText) => {
+    this.model.updateTodo(id, todoText);
+  };
+
+  handleDeleteTodo = id => {
+    this.model.deleteTodo(id);
+  };
+  handleToggleTodo = id => {
+    this.model.toggleTodo(id);
+  };
 }
 
 const app = new Controller(new Model(), new View());
