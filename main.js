@@ -5,7 +5,10 @@
 class Model {
   constructor() {
     this.todos = [
-      // { id: 0, text:'My fancy Todo', completed: false}
+      // { id: 0, text: 'My fancy Todo', completed: false },
+      // { id: 0, text: 'My fancy Todo', completed: false },
+      // { id: 0, text: 'My fancy Todo', completed: false },
+      // { id: 0, text: 'My fancy Todo', completed: false }
     ];
   }
 
@@ -13,7 +16,8 @@ class Model {
   createTodo(text) {
     const todo = {
       id: Date()
-        .now.toString()
+        .toString()
+        .replace(/ /g, '')
         .concat(text),
       text,
       completed: false
@@ -89,12 +93,64 @@ class View {
     return document.querySelector(selector);
   }
 
-  getInputText() {
+  _getInputText() {
     return this.input.value;
   }
 
-  resetInputText() {
+  _resetInputText() {
     this.input.value = '';
+  }
+
+  // Display todos -> executed when update delete create or toggled todos
+  displayTodos(todos) {
+    // Deleting all todos in the list element
+    while (this.todoList.firtsChild) {
+      this.todoList.removeChild(this.todoList.firtsChild);
+    }
+
+    // Show a message is there is no todos
+    if (!todos.length) {
+      const p = this.createElement('p');
+      p.textContent = 'Nothing to do! Add a task?';
+      this.todoList.append(p);
+    } else {
+      /* loop through todos array and create a li element with the data from 
+          the todo and append it to the listTodo
+      */
+
+      todos.forEach(todo => {
+        const li = this.createElement('li');
+        li.id = todo.id;
+
+        // Checkbox
+        const checkbox = this.createElement('input');
+        checkbox.type = 'check';
+        checkbox.checked = todo.completed;
+
+        // Text
+        const span = this.createElement('span');
+        span.contentEditable = true;
+        span.classList.add('editable');
+
+        if (todo.completed) {
+          const strike = this.createElement('s');
+          strike.textContent = todo.text;
+          span.append(strike);
+        } else {
+          span.textContent = todo.text;
+        }
+
+        // Button
+        const deleteBtn = this.createElement('button');
+        deleteBtn.textContent = 'Delete';
+
+        // Appending to the li element
+        li.append(checkbox, span, deleteBtn);
+
+        // Appeding to the ul element
+        this.todoList.append(li);
+      });
+    }
   }
 }
 
@@ -106,6 +162,12 @@ class Controller {
   constructor(model, view) {
     this.model = model;
     this.view = view;
+
+    this.onTodoListChanged();
+  }
+
+  onTodoListChanged() {
+    this.view.displayTodos(this.model.todos);
   }
 }
 
