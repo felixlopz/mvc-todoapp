@@ -4,12 +4,23 @@
 
 class Model {
   constructor() {
-    this.todos = [
-      { id: 0, text: 'My fancy Todo', completed: false }
-      // { id: 0, text: 'My fancy Todo', completed: false },
-      // { id: 0, text: 'My fancy Todo', completed: false },
-      // { id: 0, text: 'My fancy Todo', completed: false }
-    ];
+    this.todos =
+      JSON.parse(localStorage.getItem('todos')) ||
+      [
+        // { id: 0, text: 'My fancy Todo', completed: false }
+        // { id: 0, text: 'My fancy Todo', completed: false },
+        // { id: 0, text: 'My fancy Todo', completed: false },
+        // { id: 0, text: 'My fancy Todo', completed: false }
+      ];
+  }
+
+  bindTodoListChanged(callback) {
+    this.onTodoListChanged = callback;
+  }
+
+  _commit() {
+    this.onTodoListChanged();
+    localStorage.setItem('todos', JSON.stringify(this.todos));
   }
 
   // Adding a simple todo giving a unique id with date and text
@@ -17,33 +28,43 @@ class Model {
     const todo = {
       id: Date()
         .toString()
-        .replace(/ /g, '')
-        .concat(text),
+        .concat(text)
+        .replace(/ /g, ''),
       text,
       completed: false
     };
     this.todos.push(todo);
+
+    this._commit();
   }
 
   // update todo text method, map through the todos and replace the text with the specified id
   updateTodo(id, text) {
     this.todos = this.todos.map(todo => {
-      todo.id === id ? { id: todo.id, text, completed: todo.completed } : todo;
+      if (todo.id === id) {
+        return { id: todo.id, text, completed: todo.completed };
+      }
+      return todo;
     });
+
+    this._commit();
   }
 
   // delete todo method: filter the todo with specified id
   deleteTodo(id) {
     this.todos = this.todos.filter(todo => todo.id !== id);
+    this._commit();
   }
 
   // toggle todo completed method
   toggleTodo(id) {
     this.todos = this.todos.map(todo => {
-      todo.id === id
-        ? { id: todo.id, text: todo.text, completed: !todo.completed }
-        : todo;
+      if (todo.id === id) {
+        return { id: todo.id, text: todo.text, completed: !todo.completed };
+      }
+      return todo;
     });
+    this._commit();
   }
 }
 /*
@@ -76,6 +97,10 @@ class View {
     // Wrapper of the todos
     this.todoList = this.createElement('ul', 'todo-list');
 
+    // Temporary text when editing todo
+    this._tempText = '';
+    this._initInputListeners();
+
     // Append the input and button to the form
     this.form.append(this.input, this.submitBtn);
 
@@ -93,7 +118,7 @@ class View {
     return document.querySelector(selector);
   }
 
-  _getInputText() {
+  get _getInputText() {
     return this.input.value;
   }
 
@@ -101,11 +126,20 @@ class View {
     this.input.value = '';
   }
 
+  // When there is an input on editable element update tempText
+  _initInputListeners() {
+    this.todoList.addEventListener('input', e => {
+      if (e.target.className === 'editable') {
+        this._tempText = e.target.innerText;
+      }
+    });
+  }
+
   // Display todos -> executed when update delete create or toggled todos
   displayTodos(todos) {
     // Deleting all todos in the list element
-    while (this.todoList.firtsChild) {
-      this.todoList.removeChild(this.todoList.firtsChild);
+    while (this.todoList.firstChild) {
+      this.todoList.removeChild(this.todoList.firstChild);
     }
 
     // Show a message is there is no todos
@@ -128,15 +162,14 @@ class View {
         checkbox.checked = todo.completed;
 
         // Text
-        const span = this.createElement('span');
-        span.contentEditable = true;
-        span.classList.add('editable');
+        const span = this.createElement('span', 'editable');
 
         if (todo.completed) {
           const strike = this.createElement('s');
           strike.textContent = todo.text;
           span.append(strike);
         } else {
+          span.contentEditable = true; // todo uncompleted we can update it
           span.textContent = todo.text;
         }
 
@@ -160,7 +193,17 @@ class View {
 
       if (this._getInputText) {
         handler(this._getInputText);
-        this._resetInputText;
+        this._resetInputText();
+      }
+    });
+  }
+
+  bindUpdateTodo(handler) {
+    this.todoList.addEventListener('focusout', e => {
+      if (this._tempText) {
+        const id = e.target.parentElement.id;
+        handler(id, this._tempText);
+        this._tempText = '';
       }
     });
   }
@@ -193,15 +236,17 @@ class Controller {
     this.model = model;
     this.view = view;
 
-    this.onTodoListChanged();
+    this.onTodoListChanged(this.model.todos);
     this.view.bindCreateTodo(this.handleCreateTodo);
-    this.view.bindCreateTodo(this.handleCreateTodo);
-    this.view.bindCreateTodo(this.handleCreateTodo);
+    this.view.bindDeleteTodo(this.handleDeleteTodo);
+    this.view.bindToggleTodo(this.handleToggleTodo);
+    this.view.bindUpdateTodo(this.handleUpdateTodo);
+    this.model.bindTodoListChanged(this.onTodoListChanged);
   }
 
-  onTodoListChanged() {
+  onTodoListChanged = () => {
     this.view.displayTodos(this.model.todos);
-  }
+  };
 
   handleCreateTodo = todoText => {
     this.model.createTodo(todoText);
